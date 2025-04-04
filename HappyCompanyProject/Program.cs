@@ -1,6 +1,5 @@
 using System.Text;
 using Application.Extensions;
-using Application.Utilities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +47,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-var tx =PasswordHasher.HashPassword("P@ssw0rd");
 builder.Services.AddApplicationServices();
 
 
