@@ -11,6 +11,7 @@ using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 namespace Application.Services
 {
@@ -28,89 +29,106 @@ namespace Application.Services
         public async Task<Result<TokenResponseDto>> LoginAsync(LoginRequestDto request)
         {
             var result = new Result<TokenResponseDto>(null);
-
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            try
             {
-                result.StatusCode = StatusCode.BadRequest;
-                result.ErrorMessages = new List<string> { "Email and Password are required." };
-                return result;
+                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+                {
+                    result.StatusCode = StatusCode.BadRequest;
+                    result.ErrorMessages = new List<string> { "Email and Password are required." };
+                    return result;
+                }
+
+                var user = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+                if (user == null || !user.Active)
+                {
+                    result.StatusCode = StatusCode.Unauthenticated;
+                    result.ErrorMessages = new List<string> { "Invalid credentials or inactive user." };
+                    return result;
+                }
+
+                if (user.PasswordHash != PasswordHasher.HashPassword(request.Password))
+                {
+                    result.StatusCode = StatusCode.Unauthenticated;
+                    result.ErrorMessages = new List<string> { "Invalid credentials." };
+                    return result;
+                }
+
+                var accessToken = GenerateAccessToken(user);
+                var refreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+                await _context.SaveChangesAsync();
+
+                var tokenResponse = new TokenResponseDto
+                {
+                    Token = accessToken,
+                    RefreshToken = refreshToken
+                };
+
+                result.Data = tokenResponse;
+                result.StatusCode = StatusCode.Success;
+                result.SuccessMessege = "Login successful.";
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred during LoginAsync for email {Email}", request.Email);
+                result.StatusCode = StatusCode.InternalError;
+                result.ErrorMessages = new List<string> { "An error occurred during login. Please try again later." };
             }
 
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-            if (user == null || !user.Active)
-            {
-                result.StatusCode = StatusCode.Unauthenticated;
-                result.ErrorMessages = new List<string> { "Invalid credentials or inactive user." };
-                return result;
-            }
-
-            if (user.PasswordHash != PasswordHasher.HashPassword(request.Password))
-            {
-                result.StatusCode = StatusCode.Unauthenticated;
-                result.ErrorMessages = new List<string> { "Invalid credentials." };
-                return result;
-            }
-
-            var accessToken = GenerateAccessToken(user);
-            var refreshToken = GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
-            await _context.SaveChangesAsync();
-
-            var tokenResponse = new TokenResponseDto
-            {
-                Token = accessToken,
-                RefreshToken = refreshToken
-            };
-
-            result.Data = tokenResponse;
-            result.StatusCode = StatusCode.Success;
-            result.SuccessMessege = "Login successful.";
             return result;
         }
 
         public async Task<Result<TokenResponseDto>> RefreshAsync(RefreshRequestDto request)
         {
             var result = new Result<TokenResponseDto>(null);
-
-            if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            try
             {
-                result.StatusCode = StatusCode.BadRequest;
-                result.ErrorMessages = new List<string> { "Refresh token is required." };
-                return result;
+                if (string.IsNullOrWhiteSpace(request.RefreshToken))
+                {
+                    result.StatusCode = StatusCode.BadRequest;
+                    result.ErrorMessages = new List<string> { "Refresh token is required." };
+                    return result;
+                }
+
+                var user = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+
+                if (user == null || user.RefreshTokenExpiryTime <= DateTime.Now)
+                {
+                    result.StatusCode = StatusCode.Unauthenticated;
+                    result.ErrorMessages = new List<string> { "Invalid or expired refresh token." };
+                    return result;
+                }
+
+                var newAccessToken = GenerateAccessToken(user);
+                var newRefreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+                await _context.SaveChangesAsync();
+
+                var tokenResponse = new TokenResponseDto
+                {
+                    Token = newAccessToken,
+                    RefreshToken = newRefreshToken
+                };
+
+                result.Data = tokenResponse;
+                result.StatusCode = StatusCode.Success;
+                result.SuccessMessege = "Token refreshed successfully.";
             }
-
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
-
-            if (user == null || user.RefreshTokenExpiryTime <= DateTime.Now)
+            catch (Exception ex)
             {
-                result.StatusCode = StatusCode.Unauthenticated;
-                result.ErrorMessages = new List<string> { "Invalid or expired refresh token." };
-                return result;
+                Log.Error(ex, "Error occurred during RefreshAsync for refresh token {RefreshToken}", request.RefreshToken);
+                result.StatusCode = StatusCode.InternalError;
+                result.ErrorMessages = new List<string> { "An error occurred while refreshing token. Please try again later." };
             }
-
-            var newAccessToken = GenerateAccessToken(user);
-            var newRefreshToken = GenerateRefreshToken();
-
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
-            await _context.SaveChangesAsync();
-
-            var tokenResponse = new TokenResponseDto
-            {
-                Token = newAccessToken,
-                RefreshToken = newRefreshToken
-            };
-
-            result.Data = tokenResponse;
-            result.StatusCode = StatusCode.Success;
-            result.SuccessMessege = "Token refreshed successfully.";
             return result;
         }
 
