@@ -27,6 +27,7 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.NotFound;
                     result.ErrorMessages = new List<string> { "Warehouse item not found." };
+                    Log.Error("Warehouse item with {Id} not found", id);
                     return result;
                 }
                 result.Data = new WarehouseItemDto
@@ -40,6 +41,7 @@ namespace Application.Services
                     WarehouseId = item.WarehouseId
                 };
                 result.StatusCode = StatusCode.Success;
+                Log.Error("Warehouse item with {Id} found", id);
             }
             catch (Exception ex)
             {
@@ -126,6 +128,8 @@ namespace Application.Services
                 };
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Warehouse item created successfully.";
+                Log.Error("Warehouse item created {ItemName}", item.ItemName);
+
             }
             catch (Exception ex)
             {
@@ -169,6 +173,7 @@ namespace Application.Services
                 };
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Warehouse item updated successfully.";
+                Log.Error("warehouse item with id {Id} updated", id);
             }
             catch (Exception ex)
             {
@@ -196,6 +201,7 @@ namespace Application.Services
                 result.Data = true;
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Warehouse item deleted successfully.";
+                Log.Error("warehouse item with id {Id} deleted", id);
             }
             catch (Exception ex)
             {

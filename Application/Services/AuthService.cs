@@ -20,6 +20,7 @@ namespace Application.Services
         private readonly InventoryContext _context;
         private readonly IConfiguration _configuration;
 
+
         public AuthService(InventoryContext context, IConfiguration configuration)
         {
             _context = context;
@@ -66,12 +67,14 @@ namespace Application.Services
                 var tokenResponse = new TokenResponseDto
                 {
                     Token = accessToken,
-                    RefreshToken = refreshToken
+                    RefreshToken = refreshToken,
+                    Role = user.Role?.Name
                 };
 
                 result.Data = tokenResponse;
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Login successful.";
+                Log.Information( "logged in {FullName}", user.FullName);
             }
             catch (Exception ex)
             {
@@ -107,21 +110,19 @@ namespace Application.Services
                 }
 
                 var newAccessToken = GenerateAccessToken(user);
-                var newRefreshToken = GenerateRefreshToken();
 
-                user.RefreshToken = newRefreshToken;
-                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
                 await _context.SaveChangesAsync();
 
                 var tokenResponse = new TokenResponseDto
                 {
                     Token = newAccessToken,
-                    RefreshToken = newRefreshToken
                 };
 
                 result.Data = tokenResponse;
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Token refreshed successfully.";
+
+                Log.Information("{FullName} refreshed his token", user.FullName);
             }
             catch (Exception ex)
             {

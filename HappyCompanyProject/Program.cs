@@ -10,10 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+//rollingInterval is infinite to have only one file for simplicity sake only
+
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
-     .WriteTo.Console()
-    .WriteTo.File("logs/app_log.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -21,6 +21,16 @@ builder.Host.UseSerilog();
 builder.Services.AddDbContext<InventoryContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection"),
         b => b.MigrationsAssembly("HappyCompanyProject")));
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddControllers();
 
@@ -53,7 +63,14 @@ builder.Services.AddApplicationServices();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.UseSerilogRequestLogging();
+
+//add this middleware only if you want to logg all request going through the pipline
+
+//I don't belive leaving it un-commented will serve any comprehension eaither un-comment it and change the level to warning at least to avoid 
+//much logging
+
+//app.UseSerilogRequestLogging();
+app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
 
