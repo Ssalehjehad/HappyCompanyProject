@@ -42,6 +42,7 @@ namespace Application.Services
                     ItemsCount = itemsCount
                 };
                 result.StatusCode = StatusCode.Success;
+                Log.Error("warehouse with id {Id} retrived", id);
             }
             catch (Exception ex)
             {
@@ -130,6 +131,7 @@ namespace Application.Services
                 };
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Warehouse created successfully.";
+                Log.Error("warehouse with id {Name} created", warehouse.Name);
             }
             catch (Exception ex)
             {
@@ -150,6 +152,7 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.NotFound;
                     result.ErrorMessages = new List<string> { "Warehouse not found." };
+                    Log.Error("warehouse with id {Id} not found", id);
                     return result;
                 }
 
@@ -171,6 +174,7 @@ namespace Application.Services
                 };
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Warehouse updated successfully.";
+                Log.Error("warehouse with id {Id} updated", warehouse.Id);
             }
             catch (Exception ex)
             {
@@ -191,6 +195,7 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.NotFound;
                     result.ErrorMessages = new List<string> { "Warehouse not found." };
+                    Log.Error("warehouse with id {Id} not found", id);
                     return result;
                 }
 
@@ -199,6 +204,7 @@ namespace Application.Services
                 result.Data = true;
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Warehouse deleted successfully.";
+                Log.Error("warehouse with id {Id} deleted", id);
             }
             catch (Exception ex)
             {

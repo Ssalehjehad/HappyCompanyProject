@@ -42,6 +42,7 @@ namespace Application.Services
                     Active = user.Active
                 };
                 result.StatusCode = StatusCode.Success;
+                Log.Information("retrived {Email}", user.Email);
             }
             catch (Exception ex)
             {
@@ -70,6 +71,7 @@ namespace Application.Services
 
                 result.Data = userDtos;
                 result.StatusCode = StatusCode.Success;
+                Log.Information("retrived all users");
             }
             catch (Exception ex)
             {
@@ -89,6 +91,7 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.AlreadyExist;
                     result.ErrorMessages = new List<string> { "A user with this email already exists." };
+                    Log.Information("Creation of user with duplicate {Email}", dto.Email);
                     return result;
                 }
 
@@ -115,6 +118,8 @@ namespace Application.Services
                 };
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "User created successfully.";
+                Log.Information("Creation of user with {Email}", dto.Email);
+
             }
             catch (Exception ex)
             {
@@ -135,6 +140,8 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.NotFound;
                     result.ErrorMessages = new List<string> { "User not found." };
+                    Log.Information("User not found for update operation {Email}", dto.Email);
+
                     return result;
                 }
 
@@ -155,6 +162,8 @@ namespace Application.Services
                 };
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "User updated successfully.";
+                Log.Information("User updated successfully, old email {Email}", dto.Email);
+
             }
             catch (Exception ex)
             {
@@ -175,6 +184,7 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.NotFound;
                     result.ErrorMessages = new List<string> { "User not found." };
+                    Log.Information("User not found for delete operation {id}", id);
                     return result;
                 }
 
@@ -182,6 +192,8 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.BadRequest;
                     result.ErrorMessages = new List<string> { "Admin user cannot be deleted." };
+                    Log.Information("Admin user cannot be deleted {Email}", user.Email);
+
                     return result;
                 }
 
@@ -191,6 +203,8 @@ namespace Application.Services
                 result.Data = true;
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "User deleted successfully.";
+                Log.Information("User deleted successfully {Email}", user.Email);
+
             }
             catch (Exception ex)
             {
@@ -211,6 +225,8 @@ namespace Application.Services
                 {
                     result.StatusCode = StatusCode.NotFound;
                     result.ErrorMessages = new List<string> { "User not found." };
+                    Log.Information("User not found for password changing operation {id}", id);
+
                     return result;
                 }
 
@@ -220,6 +236,7 @@ namespace Application.Services
                 result.Data = true;
                 result.StatusCode = StatusCode.Success;
                 result.SuccessMessege = "Password changed successfully.";
+                Log.Information("Password changed successfully for {Email}", user.Email);
             }
             catch (Exception ex)
             {
